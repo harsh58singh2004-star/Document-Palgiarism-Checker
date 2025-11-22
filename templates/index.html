@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Plagiarism Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .file-name {
+            margin-top: 15px;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .check-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 30px;
+        }
+
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .check-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .score-value {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .score-label {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .status.high { background: #ff4757; }
+        .status.medium { background: #ffa502; }
+        .status.low { background: #26de81; }
+
+        .matches-section {
+            margin-top: 30px;
+        }
+
+        .matches-header {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .match-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .match-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .match-similarity {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .match-text {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        .match-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff4757;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Document Plagiarism Checker</h1>
+        <p class="subtitle">Upload two documents to compare and detect plagiarism using AI-powered analysis</p>
+
+        <div class="error" id="error"></div>
+
+        <form id="plagiarismForm">
+            <div class="upload-section">
+                <div class="file-upload" onclick="document.getElementById('file1').click()">
+                    <label class="file-upload-label">
+                        <div class="upload-icon">📄</div>
+                        <h3>Document 1</h3>
+                        <p>Click to upload .txt file</p>
+                        <input type="file" id="file1" name="file1" accept=".txt" required>
+                        <div class="file-name" id="fileName1"></div>
+                    </label>
+                </div>
+
+                <div class="file-upload" onclick="document.getElementById('file2').click()">
+                    <label class="file-upload-label">
+                        <div class="upload-icon">📄</div>
+                        <h3>Document 2</h3>
+                        <p>Click to upload .txt file</p>
+                        <input type="file" id="file2" name="file2" accept=".txt" required>
+                        <div class="file-name" id="fileName2"></div>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="check-btn" id="checkBtn">
+                🔍 Check for Plagiarism
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing documents...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="score-card">
+                <div class="score-label">Similarity Score</div>
+                <div class="score-value" id="scoreValue">0%</div>
+                <div class="status" id="status"></div>
+            </div>
+
+            <div class="matches-section">
+                <div class="matches-header">
+                    📊 Found <span id="matchCount">0</span> plagiarized sections
+                </div>
+                <div id="matchesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const file1Input = document.getElementById('file1');
+        const file2Input = document.getElementById('file2');
+        const fileName1 = document.getElementById('fileName1');
+        const fileName2 = document.getElementById('fileName2');
+        const form = document.getElementById('plagiarismForm');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const error = document.getElementById('error');
+
+        file1Input.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName1.textContent = '✓ ' + e.target.files[0].name;
+            }
+        });
+
+        file2Input.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName2.textContent = '✓ ' + e.target.files[0].name;
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Hide previous results and errors
+            results.style.display = 'none';
+            error.style.display = 'none';
+            loading.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file1', file1Input.files[0]);
+            formData.append('file2', file2Input.files[0]);
+
+            try {
+                const response = await fetch('/check', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'An error occurred');
+                }
+
+                displayResults(data);
+            } catch (err) {
+                error.textContent = '❌ ' + err.message;
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function displayResults(data) {
+            const scoreValue = document.getElementById('scoreValue');
+            const status = document.getElementById('status');
+            const matchCount = document.getElementById('matchCount');
+            const matchesList = document.getElementById('matchesList');
+
+            // Display score
+            scoreValue.textContent = data.similarity_score.toFixed(2) + '%';
+
+            // Determine status
+            let statusText, statusClass;
+            if (data.similarity_score >= 70) {
+                statusText = 'High Plagiarism Risk';
+                statusClass = 'high';
+            } else if (data.similarity_score >= 40) {
+                statusText = 'Medium Plagiarism Risk';
+                statusClass = 'medium';
+            } else {
+                statusText = 'Low Plagiarism Risk';
+                statusClass = 'low';
+            }
+
+            status.textContent = statusText;
+            status.className = 'status ' + statusClass;
+
+            // Display matches
+            matchCount.textContent = data.total_matches;
+            matchesList.innerHTML = '';
+
+            if (data.plagiarized_parts.length > 0) {
+                data.plagiarized_parts.forEach((match, index) => {
+                    const matchItem = document.createElement('div');
+                    matchItem.className = 'match-item';
+                    matchItem.innerHTML = `
+                        <span class="match-similarity">${match.similarity}% Match</span>
+                        <div class="match-text">
+                            <div class="match-label">Document 1:</div>
+                            <p class="highlight">${match.doc1_sentence}</p>
+                        </div>
+                        <div class="match-text">
+                            <div class="match-label">Document 2:</div>
+                            <p class="highlight">${match.doc2_sentence}</p>
+                        </div>
+                    `;
+                    matchesList.appendChild(matchItem);
+                });
+            } else {
+                matchesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No significant matches found.</p>';
+            }
+
+            results.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
